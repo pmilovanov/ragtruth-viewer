@@ -1,4 +1,4 @@
-# RAGTruth explorer. Run `just` with no arguments to list the recipes.
+# RAGTruth viewer. Run `just` with no arguments to list the recipes.
 #
 # Needs Python 3 (and Node, for the JS tests); nothing to install.
 # Use another interpreter with e.g.  PYTHON="uv run python" just run

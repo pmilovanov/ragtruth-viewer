@@ -1,4 +1,4 @@
-/* RAGTruth explorer. Colour tokens are the dataviz reference palette (docs: README).
+/* RAGTruth viewer. Colour tokens are the dataviz reference palette (docs: README).
    Categorical slots 1-4 are the four label types, in fixed order, never recycled:
      --t0 Evident Baseless Info   --t1 Evident Conflict
      --t2 Subtle Baseless Info    --t3 Subtle Conflict                              */
