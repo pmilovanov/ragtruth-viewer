@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Serve the RAGTruth explorer.
+"""Serve the RAGTruth viewer.
 
     python3 serve.py              # corpus expected in ./data/
     python3 serve.py --download   # fetch the corpus first if absent
@@ -185,7 +185,7 @@ def main(argv: list[str] | None = None) -> int:
     url = f"http://{args.host}:{server.server_address[1]}/"
     print(f"loaded {len(ds.responses):,} responses over {len(ds.sources):,} sources "
           f"in {time.perf_counter() - t0:.1f}s")
-    print(f"RAGTruth explorer: {url}   (Ctrl-C to stop)")
+    print(f"RAGTruth viewer: {url}   (Ctrl-C to stop)")
     if args.open:
         webbrowser.open(url)
     try:

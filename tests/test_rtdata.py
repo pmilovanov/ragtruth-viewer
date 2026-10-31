@@ -160,6 +160,32 @@ class TestRealCorpus(unittest.TestCase):
     def test_six_siblings_per_source(self):
         self.assertTrue(all(len(v) == 6 for v in self.ds.rows_of_source.values()))
 
+    def test_totals_match_the_published_statistics(self):
+        """Upstream's README ("Data Statistics") gives these counts; our defaults must reproduce them,
+        which also pins down that every labelled span (implicit_true included) counts."""
+        task_of = lambda r: self.ds.sources[r["source_id"]]["task_type"]  # noqa: E731
+        ds_of = lambda r: self.ds.sources[r["source_id"]]["source"]  # noqa: E731
+        by = {}
+        for r in self.ds.responses:
+            for key in (("all",), ("task", task_of(r), ds_of(r) if task_of(r) == "Summary" else None), ("model", r["model"])):
+                row = by.setdefault(key, [set(), 0, 0, 0])
+                row[0].add(r["source_id"]); row[1] += 1; row[2] += bool(r["labels"]); row[3] += len(r["labels"])
+        got = {k: (len(v[0]), v[1], v[2], v[3]) for k, v in by.items()}
+        published = {  # (instances, responses, responses with a hallucination, hallucination spans)
+            ("all",): (2965, 17790, 7664, 14289),
+            ("task", "Summary", "CNN/DM"): (628, 3768, 1165, 1474),
+            ("task", "Summary", "Recent News"): (315, 1890, 521, 598),
+            ("task", "QA", None): (989, 5934, 1724, 2927),
+            ("task", "Data2txt", None): (1033, 6198, 4254, 9290),
+        }
+        for key, expected in published.items():
+            self.assertEqual(got[key], expected, key)
+        for model, (hallucinated, spans) in {
+            "gpt-3.5-turbo-0613": (401, 533), "gpt-4-0613": (406, 485), "llama-2-7b-chat": (1832, 3302),
+            "llama-2-13b-chat": (1677, 3799), "llama-2-70b-chat": (1395, 2608), "mistral-7B-instruct": (1953, 3562),
+        }.items():
+            self.assertEqual(got[("model", model)][2:], (hallucinated, spans), model)
+
     def test_qa_sources_parse_into_passages(self):
         for s in self.ds.sources.values():
             if s["task_type"] == "QA":
