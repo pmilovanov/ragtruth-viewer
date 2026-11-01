@@ -107,6 +107,7 @@ function typing(e) {
 
 addEventListener("keydown", (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (document.querySelector("dialog[open]")) return;           // a modal (e.g. View JSON) has the keyboard
   if (e.key === "Escape") { document.activeElement?.blur?.(); return; }
   if (typing(e)) return;
   const inBrowse = route.view === "browse";
@@ -124,6 +125,7 @@ addEventListener("keydown", (e) => {
       if (inBrowse && !e.target.closest?.("svg")) browse.siblings(e.key === "ArrowRight" ? 1 : -1);
       break;
     case "c": if (inBrowse && route.id != null) navigate("browse", route.id, !route.compare); break;
+    case "v": if (inBrowse && !route.compare) document.querySelector('[data-action="view-json"]')?.click(); break;
     default:
   }
 });

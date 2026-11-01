@@ -226,6 +226,8 @@ function cached(key, load) {
 }
 export const getResponse = (id) => cached(`r/${id}`, () => ask("response", { id }));
 export const getSource = (sid) => cached(`s/${sid}`, () => ask("source", { sid }));
+/** {response, source}: the two rows exactly as the dataset files have them. */
+export const getRecord = (id) => cached(`rec/${id}`, () => ask("record", { id }));
 
 /** Row facts for a list entry, no network needed. */
 export function rowInfo(i) {

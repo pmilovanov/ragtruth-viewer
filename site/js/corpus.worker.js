@@ -72,6 +72,7 @@ self.onmessage = async ({ data: { id, op, args = {} } }) => {
     else if (!corpus) throw new Error("the dataset is not loaded yet");
     else if (op === "response") result = corpus.responseDetail(args.id);
     else if (op === "source") result = corpus.sourceDetail(args.sid);
+    else if (op === "record") result = corpus.record(args.id);
     else if (op === "search") result = corpus.search(args.q, args.scope);
     else throw new Error(`unknown operation ${op}`);
     self.postMessage({ id, result });

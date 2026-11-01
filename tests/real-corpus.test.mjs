@@ -58,3 +58,14 @@ test("totals match the statistics table published in the upstream README", { ski
   };
   for (const [m, v] of Object.entries(byModel)) assert.deepEqual(val(`model ${m}`).slice(2), v, m);
 });
+
+test("record() returns every response and source exactly as parsed from the files", { skip }, () => {
+  const c = corpus();
+  const pristine = (f) => readFileSync(new URL(f, dir), "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+  const responses = pristine(FILES.responses), sources = new Map(pristine(FILES.sources).map((s) => [s.source_id, s]));
+  for (const r of responses) {
+    const rec = c.record(r.id);
+    assert.deepEqual(rec.response, r, `response ${r.id}`);
+    assert.deepEqual(rec.source, sources.get(r.source_id), `source of ${r.id}`);
+  }
+});

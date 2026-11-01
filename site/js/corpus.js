@@ -93,11 +93,14 @@ export class Corpus {
     this.responses = responses;
     this.rowOf = new Map();
     this.rowsOfSource = new Map();
+    this.rawLabels = [];   // labels as upstream has them (order and code-point offsets), for record()
     responses.forEach((r, i) => {
       if (!this.sources.has(r.source_id)) throw new Error(`response ${r.id} refers to unknown source ${r.source_id}`);
       const toUtf16 = codePointToUtf16(r.response);
-      // Spans in reading order make every consumer simpler.
-      r.labels = (r.labels || [])
+      const raw = r.labels || [];
+      this.rawLabels.push(raw);
+      // Spans in reading order make every consumer simpler. (map() leaves `raw` untouched.)
+      r.labels = raw
         .map((l) => (toUtf16 ? { ...l, start: toUtf16(l.start), end: toUtf16(l.end) } : l))
         .sort((a, b) => a.start - b.start || a.end - b.end);
       this.rowOf.set(r.id, i);
@@ -200,6 +203,17 @@ export class Corpus {
         id: this.responses[j].id, row: j, model: this.responses[j].model, n_spans: this.responses[j].labels.length,
       })),
     };
+  }
+
+  /**
+   * The response and its source as parsed from the two files: upstream field
+   * names, label order and (code-point) offsets, nothing added.
+   */
+  record(id) {
+    const i = this.rowOf.get(String(id));
+    if (i === undefined) throw new Error(`no response ${JSON.stringify(id)}`);
+    const r = this.responses[i];
+    return { response: { ...r, labels: this.rawLabels[i] }, source: this.sources.get(r.source_id) };
   }
 
   /** A source with all of its responses, for side-by-side comparison. */
