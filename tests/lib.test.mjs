@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   wilson, segment, quantileEdges, binOf,
   poissonBinomial, niceTicks, median, parseOriginal, findLoose, kvQuoted,
-} from "../static/js/lib.js";
+} from "../site/js/lib.js";
 
 const near = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} !~ ${b}`);
 

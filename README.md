@@ -2,9 +2,11 @@
 
 **Read, search and chart the [RAGTruth](https://github.com/ParticleMedia/RAGTruth) hallucination dataset in your browser.** See every response with its hallucinated spans highlighted next to the source it was generated from, and see the patterns across all 17,790 responses.
 
+**[Open the viewer →](https://pmilovanov.github.io/ragtruth-viewer/)**
+
 ![The Overview page: filters, headline numbers, a model-by-task heatmap and the mix of hallucination types](docs/images/overview.png)
 
-It is one Python script (standard library only) that serves a local web page. There is nothing to install.
+It runs entirely in your browser: there is nothing to install and no server behind it.
 
 ## Why this exists
 
@@ -14,18 +16,21 @@ This viewer exists to answer those questions by looking.
 
 ## Quick start
 
+Open **<https://pmilovanov.github.io/ragtruth-viewer/>**.
+
+- The first visit downloads the dataset, about 7 MB, straight from the official [ParticleMedia/RAGTruth](https://github.com/ParticleMedia/RAGTruth) repository (pinned to one commit, so it never changes underneath you). Your browser parses it in a background thread, and caches the download like any other file.
+- After that everything happens in your browser. There is no server: what you look at, filter and search never leaves your machine. The only network requests are for the page itself and those two dataset files.
+- It needs a modern browser and works best on a laptop or desktop screen. Holding the dataset takes roughly 100 MB of memory.
+
+**Running it yourself** is just as simple, because the viewer is a folder of static files:
+
 ```bash
 git clone https://github.com/pmilovanov/ragtruth-viewer
 cd ragtruth-viewer
-python3 serve.py --download     # first run only: fetches the dataset (~36 MB)
+python3 -m http.server 8765 --directory site     # or any static file server; `just run` does the same
 ```
 
-Then open <http://127.0.0.1:8765/>. Next time, just `python3 serve.py`.
-
-- You need Python 3 (developed on 3.13) and a modern browser. No `pip install`, no `npm install`, no build step.
-- The dataset is not bundled. `--download` fetches `response.jsonl` and `source_info.jsonl` from the official [ParticleMedia/RAGTruth](https://github.com/ParticleMedia/RAGTruth) repository into `./data/` (git-ignored). If you already have the two files, use `python3 serve.py --data-dir /path/to/them`.
-- It runs on your machine only: it listens on `127.0.0.1` by default, and the page loads nothing from the internet. The one-time download is the only network access.
-- Prefer [just](https://github.com/casey/just)? `just run --download` the first time, then `just run`. `just test` runs the tests.
+Then open <http://127.0.0.1:8765/>. To work offline, run `just fetch-data` (or `sh scripts/fetch-data.sh`) once: it saves the two files into `site/data/`, which the viewer prefers whenever it is served from your own machine.
 
 ## A two-minute primer on RAGTruth
 
@@ -114,15 +119,17 @@ Light and dark themes are both supported (`t` toggles):
 
 ## Try this
 
-1. On **Overview**, click the Llama-2-13B × Data2txt cell (95.2%). **Browse** opens on exactly those responses.
-2. Press `c` on any response to see how all six models handled the same source.
-3. Open response `5658` (a Yelp business), select its "due to null" annotation, and watch the null field light up in the source.
-4. Search for `Gaza Strip`. The first hit, response `1472`, is the example in RAGTruth's own README.
-5. Untick **Count implicit-true spans** and watch the overall rate fall from 43.1% to 39.4%.
+Each step links straight into the viewer.
+
+1. [Llama-2-13B on data-to-text](https://pmilovanov.github.io/ragtruth-viewer/#/browse?task=Data2txt&model=llama-2-13b-chat): 95.2% of these responses contain a hallucination. (On **Overview**, clicking that cell of the heatmap gets you here too.)
+2. [All six models on one Yelp business](https://pmilovanov.github.io/ragtruth-viewer/#/browse/5658/compare): the same source, six answers, side by side. Press `c` on any response for this view.
+3. [Response 5658](https://pmilovanov.github.io/ragtruth-viewer/#/browse/5658): select its "due to null" annotation and watch the null field light up in the source.
+4. [Search for "Gaza Strip"](https://pmilovanov.github.io/ragtruth-viewer/#/browse?q=Gaza%20Strip&in=response): the first hit, response `1472`, is the example in RAGTruth's own README.
+5. [Implicit-true spans not counted](https://pmilovanov.github.io/ragtruth-viewer/#/overview?implicit=0): the overall rate falls from 43.1% to 39.4%. The **Count implicit-true spans** switch toggles it.
 
 ## How the viewer counts things
 
-- A response **has a hallucination** if it has at least one labelled span. By default every labelled span counts, `implicit_true` ones included. That is the convention behind the statistics table in the [upstream README](https://github.com/ParticleMedia/RAGTruth#data-statistics), and the viewer reproduces that table exactly (an automated test checks it whenever the data is present). Untick **Count implicit-true spans** to treat those spans as supported instead; every number and chart follows.
+- A response **has a hallucination** if it has at least one labelled span. By default every labelled span counts, `implicit_true` ones included. That is the convention behind the statistics table in the [upstream README](https://github.com/ParticleMedia/RAGTruth#data-statistics), and the viewer reproduces that table exactly (a test checks it against the real data on every change). Untick **Count implicit-true spans** to treat those spans as supported instead; every number and chart follows.
 - **Text annotated** is the share of response characters inside at least one span. Overlapping spans are counted once.
 - **Has label type** selects responses containing at least one span of that type; the charts then count *all* spans in those responses.
 - The rates are **descriptions of this corpus, not a leaderboard**. There is one prompt template per task, the GPT models were sampled at temperature 0.7, the open models at five temperatures between 0.7 and 1.0, and the labels are human judgements. Confidence intervals are Wilson 95% intervals over responses; they treat responses as independent even though six share each source.
@@ -131,18 +138,19 @@ Light and dark themes are both supported (`t` toggles):
 ## Use it for your own analysis
 
 - **CSV.** The CSV button in Browse exports the filtered list (`id`, `source_id`, `model`, `task`, `dataset`, `split`, `temperature`, `quality`, `n_spans`, `hallucinated_chars`, `response_chars`). Join it to RAGTruth's own files on `id`. The span counts follow the implicit-true switch.
-- **Links.** The filters and the response you are looking at live in the URL hash, e.g. `http://127.0.0.1:8765/#/browse/1472?model=mistral-7B-instruct`. (The link opens on any machine that runs the viewer.)
-- **As a library.** `rtdata.py` has no web dependencies:
+- **Links.** The filters and the response you are looking at live in the URL, so any view can be bookmarked or shared, like the links in [Try this](#try-this).
+- **From code.** `site/js/corpus.js` is a dependency-free ES module that runs in Node too. From a file in the repository root, with the data fetched:
 
-```python
-from pathlib import Path
-import rtdata
+```js
+import { readFileSync } from "node:fs";
+import { Corpus } from "./site/js/corpus.js";
 
-ds = rtdata.Dataset.load(Path("data"))
-hits = ds.search("gaza strip")      # row indices; scope= "response", "spans", "notes" or "source"
-r = ds.response_detail(ds.responses[hits[0]]["id"])
-print(r["id"], r["model"], [(l["type"], l["text"]) for l in r["labels"]])
-# 1472 mistral-7B-instruct [('Evident Baseless Info', 'Gaza Strip')]
+const read = (f) => readFileSync(`site/data/${f}`, "utf8");
+const corpus = Corpus.fromJSONL(read("response.jsonl"), read("source_info.jsonl"));
+const hits = corpus.search("gaza strip");          // row indices; scopes: "response", "spans", "notes", "source"
+const r = corpus.responseDetail(corpus.responses[hits[0]].id);
+console.log(r.id, r.model, r.labels.map((l) => [l.type, l.text]));
+// 1472 mistral-7B-instruct [ [ 'Evident Baseless Info', 'Gaza Strip' ] ]
 ```
 
 ## Keyboard shortcuts
@@ -152,25 +160,33 @@ print(r["id"], r["model"], [(l["type"], l["text"]) for l in r["labels"]])
 ## Development
 
 ```bash
-python3 -m unittest discover -s tests    # loader, index, search, HTTP; real-corpus checks run if ./data is present
-node --test                              # span segmentation, evidence matching, selection logic, URL state
+just test          # or: node --test   (developed on Node 22)
+just fetch-data    # optional: lets the real-data tests run, e.g. against the published statistics table
+just run           # serve site/ locally
 ```
 
 ```
-  serve.py        HTTP server and CLI (stdlib http.server)
-  rtdata.py       load, columnar index, record lookup, search
-  static/         index.html, style.css, js/ (ES modules, hand-rolled SVG and HTML charts)
-  tests/          unittest (Python) and node:test (JS)
-  docs/images/    the screenshots above
-  justfile        just run, just test
-  data/           the dataset, fetched by --download (git-ignored)
+  site/                  the whole viewer: deployed to GitHub Pages as-is, no build step
+    index.html, style.css
+    js/app.js …          the page: filters, Overview charts, Browse (ES modules, hand-rolled SVG and HTML charts)
+    js/corpus.worker.js  downloads and parses the dataset in a background thread
+    js/corpus.js         the data layer: index, record lookups, search (no DOM, also runs in Node)
+    js/config.js         where the dataset comes from: the pinned upstream commit
+    data/                optional local copy of the dataset (git-ignored)
+  tests/                 node:test
+  scripts/fetch-data.sh  downloads the pinned dataset into site/data/
+  docs/images/           the screenshots above
 ```
 
-The server sends the browser one ~190 KB gzipped, column-oriented index (everything except the bulky text). The browser does all the aggregating and cross-filtering itself, so charts redraw in tens of milliseconds; response and source text are fetched per record on demand. Tested in Chromium, with Python 3.13 and Node 22; other combinations are untried. The viewer was first built in [`pmilovanov/guardrails`](https://github.com/pmilovanov/guardrails) under `data/ragtruth/ui/`.
+**How it works.** A Web Worker downloads the two files and builds a compact, column-oriented index, which it hands to the page; the page does all the aggregating and cross-filtering itself, so charts redraw in tens of milliseconds. Full records and searches are answered by the worker. Append `?data=upstream` or `?data=local` to the URL to force where the data comes from.
+
+**Deployment.** `.github/workflows/pages.yml` runs the tests on every pull request, against the real dataset downloaded from the pinned commit, and publishes `site/` to GitHub Pages on every push to `main`. To move to a newer RAGTruth release, change `UPSTREAM_COMMIT` and `SIZES` in `site/js/config.js`; the tests tell you if anything no longer adds up.
+
+Tested in Chromium; other browsers are untried. The viewer was first built in [`pmilovanov/guardrails`](https://github.com/pmilovanov/guardrails), then ported from a small Python server to a static site.
 
 ## Credits and citation
 
-RAGTruth was created by Yuanhao Wu, Juno Zhu, Siliang Xu, Kashun Shum, Cheng Niu, Randy Zhong, Juntong Song and Tong Zhang. **This viewer is an independent tool and is not affiliated with the authors.** The dataset repository is MIT-licensed; its source documents come from MS MARCO, Yelp, CNN/Daily Mail and recent news, which may carry terms of their own. The screenshots above reproduce short excerpts of the data, for illustration.
+RAGTruth was created by Yuanhao Wu, Juno Zhu, Siliang Xu, Kashun Shum, Cheng Niu, Randy Zhong, Juntong Song and Tong Zhang. **This viewer is an independent tool and is not affiliated with the authors.** The dataset repository is MIT-licensed; its source documents come from MS MARCO, Yelp, CNN/Daily Mail and recent news, which may carry terms of their own. The viewer does not republish the dataset: your browser downloads it from the RAGTruth repository. The screenshots above reproduce short excerpts of the data, for illustration.
 
 If you use the dataset, please cite the paper:
 

@@ -1,25 +1,19 @@
-# RAGTruth viewer. Run `just` with no arguments to list the recipes.
-#
-# Needs Python 3 (and Node, for the JS tests); nothing to install.
-# Use another interpreter with e.g.  PYTHON="uv run python" just run
+# RAGTruth viewer: a static site, no build step. Run `just` to list the recipes.
 
-python := env("PYTHON", "python3")
+port := env("PORT", "8765")
 
 # List the recipes.
 default:
     @just --list
 
-# Serve at http://127.0.0.1:8765/. Extra args go to serve.py: --download (first use), --port N, --open.
-run *args:
-    {{ python }} serve.py {{ args }}
+# Serve site/ at http://127.0.0.1:8765/ (any static file server will do).
+run:
+    python3 -m http.server {{ port }} --bind 127.0.0.1 --directory site
 
-# Run every test suite.
-test: test-py test-js
+# Download the dataset into site/data/ for offline use; otherwise it comes from GitHub.
+fetch-data:
+    sh scripts/fetch-data.sh
 
-# Loader, index, search and HTTP tests.
-test-py:
-    {{ python }} -m unittest discover -s tests
-
-# Span segmentation, evidence matching, selection logic and URL state.
-test-js:
+# Run the tests (the real-dataset checks need `just fetch-data` first).
+test:
     node --test
