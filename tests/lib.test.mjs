@@ -109,3 +109,16 @@ test("kvQuoted: matches quoted JSON fragments against key/value pairs", () => {
   assert.ok(!kvQuoted('casual": false', "classy", false));                          // and so must the key
   assert.ok(!kvQuoted("no", "a", "b"));
 });
+
+test("jsonTokens: round-trips exactly and classifies keys, strings, numbers and literals", async () => {
+  const { jsonTokens } = await import("../site/js/lib.js");
+  const text = JSON.stringify({ a: 1, 'b"c': 'x \\" y: 2', d: [true, null, -2.5e3, false], e: {} }, null, 2);
+  const tokens = jsonTokens(text);
+  assert.equal(tokens.map((t) => t.text).join(""), text);
+  const of = (kind) => tokens.filter((t) => t.kind === kind).map((t) => t.text);
+  assert.deepEqual(of("key"), ['"a"', '"b\\"c"', '"d"', '"e"']);
+  assert.deepEqual(of("str"), ['"x \\\\\\" y: 2"']);            // a colon inside a string is not a key
+  assert.deepEqual(of("num"), ["1", "-2500"]);
+  assert.deepEqual(of("lit"), ["true", "null", "false"]);
+  assert.deepEqual(jsonTokens(""), []);
+});

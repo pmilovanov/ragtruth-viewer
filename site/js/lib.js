@@ -134,6 +134,28 @@ export function kvQuoted(needle, key, value) {
   return frag.length >= 5 && (n === frag || n.includes(frag));
 }
 
+/**
+ * Split (pretty-printed) JSON text into pieces for colouring:
+ * [{kind, text}] with kind "key" | "str" | "num" | "lit", or "" for punctuation and whitespace.
+ * Concatenating the texts gives back the input exactly.
+ */
+export function jsonTokens(text) {
+  const out = [];
+  let last = 0;
+  for (const m of text.matchAll(/("(?:\\.|[^"\\])*")(\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g)) {
+    if (m.index > last) out.push({ kind: "", text: text.slice(last, m.index) });
+    if (m[1] !== undefined) {
+      out.push({ kind: m[2] ? "key" : "str", text: m[1] });
+      if (m[2]) out.push({ kind: "", text: m[2] });
+    } else {
+      out.push({ kind: /^[tfn]/.test(m[0]) ? "lit" : "num", text: m[0] });
+    }
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push({ kind: "", text: text.slice(last) });
+  return out;
+}
+
 export const fmtInt = (n) => Math.round(n).toLocaleString("en-US");
 export const fmtPct = (x, digits = 1) => (x * 100).toFixed(digits) + "%";
 export const fmtNum = (x, digits = 2) => (Number.isFinite(x) ? x.toFixed(digits) : "–");

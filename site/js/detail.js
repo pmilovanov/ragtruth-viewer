@@ -1,9 +1,9 @@
 // One response (or one source's six responses) in full: highlighted text, the
 // annotators' notes, and the source it was generated from.
 
-import { D, F, getResponse, getSource } from "./data.js";
+import { D, F, getResponse, getSource, getRecord } from "./data.js";
 import { h, bindTip } from "./ui.js";
-import { segment, parseOriginal, findLoose, kvQuoted, fmtInt, fmtPct } from "./lib.js";
+import { segment, parseOriginal, findLoose, kvQuoted, jsonTokens, fmtInt, fmtPct } from "./lib.js";
 
 const tIdx = (name) => Math.min(3, Math.max(0, D.f.types.indexOf(name)));
 const isCounted = (l) => F.implicit || !l.implicit_true;
@@ -209,6 +209,76 @@ function summaryLine(row) {
   return h("p", { class: "d-sum" }, `${n} ${n === 1 ? "span" : "spans"} · ${fmtPct(D.hch[row] / D.len[row])} of the text`);
 }
 
+// ------------------------------------------------------------------- JSON
+
+const pretty = (v) => JSON.stringify(v, null, 2);
+
+function flash(btn, text, back) {
+  btn.textContent = text;
+  setTimeout(() => { btn.textContent = back; }, 1400);
+}
+
+async function copyText(btn, text, back) {
+  try { await navigator.clipboard.writeText(text); flash(btn, "Copied", back); }
+  catch { flash(btn, "Copy failed", back); }
+}
+
+/**
+ * Pretty-printed JSON as coloured text nodes (never innerHTML), one block per
+ * line so that a long string wraps under its own key, not back at the margin.
+ */
+function jsonBlock(value) {
+  const frag = document.createDocumentFragment();
+  let line;
+  const newLine = () => frag.append(line = h("span", { class: "jl" }));
+  newLine();
+  for (const { kind, text } of jsonTokens(pretty(value))) {
+    if (kind) { line.append(h("span", { class: `j-${kind}` }, text)); continue; }
+    text.split("\n").forEach((part, k) => {        // strings never hold a raw newline, so only this kind does
+      if (k) newLine();
+      if (!line.firstChild) line.style.setProperty("--in", `${part.length - part.trimStart().length}ch`);
+      if (part) line.append(part);
+    });
+  }
+  return frag;
+}
+
+/** A modal showing a response's row from response.jsonl and its source's row from source_info.jsonl. */
+function showRecord(rec) {
+  if (document.querySelector("dialog.json-dialog")) return;     // already open (say, v pressed twice while loading)
+  const tabsSpec = [
+    { name: "response.jsonl", value: rec.response,
+      note: `Response ${rec.response.id}, as recorded in response.jsonl. Span offsets count Unicode code points.` },
+    { name: "source_info.jsonl", value: rec.source,
+      note: `Its source, ${rec.source.source_id}, as recorded in source_info.jsonl.` },
+  ];
+  let cur = 0;
+  const pre = h("pre", { class: "json", tabindex: 0 });
+  const note = h("p", { class: "json-note" });
+  const tabs = tabsSpec.map((t, i) => h("button", { class: "tab", type: "button", role: "tab", onclick: () => show(i) }, t.name));
+  const copyBtn = h("button", { class: "btn small", type: "button", onclick: () => copyText(copyBtn, pretty(tabsSpec[cur].value), "Copy") }, "Copy");
+  const dlg = h("dialog", { class: "json-dialog", "aria-label": `JSON for response ${rec.response.id}` },
+    h("header", { class: "json-head" },
+      h("div", { class: "json-tabs", role: "tablist" }, ...tabs),
+      h("div", { class: "json-actions" },
+        copyBtn,
+        h("button", { class: "btn small", type: "button", onclick: () => dlg.close() }, "Close"))),
+    note, pre);
+
+  function show(i) {
+    cur = i;
+    tabs.forEach((t, k) => t.setAttribute("aria-selected", String(k === i)));
+    note.textContent = tabsSpec[i].note;
+    pre.replaceChildren(jsonBlock(tabsSpec[i].value));
+    pre.scrollTop = 0;
+  }
+  dlg.addEventListener("close", () => dlg.remove());
+  dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });   // a click on the backdrop
+  document.body.append(dlg);
+  show(0);
+  dlg.showModal();
+}
+
 export function mountDetail(root, { navigate }) {
   let token = 0, last = null;
 
@@ -257,11 +327,19 @@ export function mountDetail(root, { navigate }) {
       src.setNeedle(selected >= 0 ? parseOriginal(d.labels[selected].meta) : null);
     }
 
-    const copy = h("button", { class: "btn small", type: "button", onclick: async () => {
-      try { await navigator.clipboard.writeText(JSON.stringify(d, null, 2)); copy.textContent = "Copied"; }
-      catch { copy.textContent = "Copy failed"; }
-      setTimeout(() => { copy.textContent = "Copy JSON"; }, 1400);
-    } }, "Copy JSON");
+    // The record as the dataset has it; fetched now so a click can copy it at once.
+    let recordText = null;
+    const record = getRecord(d.id);
+    record.then((rec) => { recordText = pretty(rec.response); }).catch(() => {});
+    const copy = h("button", {
+      class: "btn small", type: "button", title: "Copy this response's record from response.jsonl",
+      onclick: async () => copyText(copy, recordText ?? pretty((await record).response), "Copy JSON"),
+    }, "Copy JSON");
+    const viewJson = h("button", {
+      class: "btn small", type: "button", dataset: { action: "view-json" },
+      title: "This response's record, and its source's, as in the dataset files (v)",
+      onclick: async () => showRecord(await record),
+    }, "View JSON");
 
     const view = h("div", { class: "detail" },
       h("header", { class: "d-head" },
@@ -270,7 +348,7 @@ export function mountDetail(root, { navigate }) {
           h("button", { class: "btn small", type: "button", disabled: !prev, title: "Previous model (←)", onclick: () => siblingNav(d).go(prev) }, "←"),
           h("button", { class: "btn small", type: "button", disabled: !next, title: "Next model (→)", onclick: () => siblingNav(d).go(next) }, "→"),
           h("button", { class: "btn small", type: "button", title: "All six responses side by side (c)", onclick: () => navigate(d.id, true) }, "Compare models"),
-          copy)),
+          viewJson, copy)),
       h("nav", { class: "sibs", "aria-label": "Responses to the same source" },
         h("span", { class: "sibs-label" }, "Same source"),
         sibs.map((s) => h("button", {

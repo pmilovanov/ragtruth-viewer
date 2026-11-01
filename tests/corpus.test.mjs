@@ -113,3 +113,22 @@ test("offsets: code points from upstream become UTF-16 units, so highlights neve
   const [l] = c.responseDetail("e").labels;
   assert.equal(text.slice(l.start, l.end), "open on Monday");
 });
+
+test("record: the rows as the files have them, whatever the page did to its own copy", () => {
+  const c = corpus(), [raw2] = fx.responses().filter((r) => r.id === "2");
+  const rec = c.record("2");
+  assert.deepEqual(rec.response, raw2);                                    // upstream label order, not sorted
+  assert.notDeepEqual(c.responseDetail("2").labels.map((l) => l.text), raw2.labels.map((l) => l.text));
+  assert.deepEqual(Object.keys(rec.response), Object.keys(raw2));          // field order preserved
+  assert.deepEqual(rec.source, fx.sources().find((s) => s.source_id === "20"));
+  assert.throws(() => c.record("999"), /no response/);
+});
+
+test("record: upstream code-point offsets survive even where the page converts them", () => {
+  const text = "Great 🍕 place 🎉 open on Monday, said nobody.";
+  const lab = fx.label(text, "open on Monday", "Evident Baseless Info");
+  const src = { source_id: "s", task_type: "Summary", source: "CNN/DM", source_info: "x", prompt: "p" };
+  const c = new Corpus([{ id: "e", source_id: "s", model: "m", temperature: 1, split: "train", quality: "good", response: text, labels: [lab] }], [src]);
+  assert.deepEqual(c.record("e").response.labels[0], lab);                 // as upstream wrote it
+  assert.notEqual(c.responseDetail("e").labels[0].start, lab.start);       // the page's converted copy
+});

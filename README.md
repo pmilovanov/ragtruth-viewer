@@ -107,6 +107,8 @@ Everything on this page is computed from whatever the filter bar currently selec
 
 This is best-effort: annotators often paraphrase. On the published data it locates roughly a third of the quotes in summaries, a seventh in QA and nearly two-thirds in data-to-text. When it cannot find one, it says so and does not guess.
 
+**The raw records.** **View JSON** (or `v`) shows the response's row from `response.jsonl` and its source's row from `source_info.jsonl`, pretty-printed, exactly as the dataset has them: upstream field names, label order and offsets. **Copy JSON** copies the response's row.
+
 **Compare models.** Press `c` (or **Compare models**) to see all six answers to one source side by side:
 
 ![All six models' answers to one Yelp business, with their hallucinations highlighted](docs/images/compare-models.png)
@@ -139,6 +141,7 @@ Each step links straight into the viewer.
 
 - **CSV.** The CSV button in Browse exports the filtered list (`id`, `source_id`, `model`, `task`, `dataset`, `split`, `temperature`, `quality`, `n_spans`, `hallucinated_chars`, `response_chars`). Join it to RAGTruth's own files on `id`. The span counts follow the implicit-true switch.
 - **Links.** The filters and the response you are looking at live in the URL, so any view can be bookmarked or shared, like the links in [Try this](#try-this).
+- **One record.** **View JSON** and **Copy JSON** give a response exactly as `response.jsonl` has it, ready for a notebook or an issue; `corpus.record(id)` (below) returns the same, with its source.
 - **From code.** `site/js/corpus.js` is a dependency-free ES module that runs in Node too. From a file in the repository root, with the data fetched:
 
 ```js
@@ -155,7 +158,7 @@ console.log(r.id, r.model, r.labels.map((l) => [l.type, l.text]));
 
 ## Keyboard shortcuts
 
-`j` / `k` next / previous response · `←` / `→` previous / next model on the same source · `c` compare · `/` search · `1` / `2` Overview / Browse · `t` theme · `Esc` leave a field
+`j` / `k` next / previous response · `←` / `→` previous / next model on the same source · `c` compare · `v` view JSON · `/` search · `1` / `2` Overview / Browse · `t` theme · `Esc` leave a field
 
 ## Development
 
