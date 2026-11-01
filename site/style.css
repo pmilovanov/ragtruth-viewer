@@ -62,7 +62,8 @@ kbd { font: 11px ui-monospace, monospace; padding: 1px 5px; border: 1px solid va
 .tabbtn:hover { background: var(--hover); }
 .tabbtn[aria-selected="true"] { background: var(--ink); color: var(--surface); }
 .links { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; }
-.links a { color: var(--ink2); text-decoration: none; white-space: nowrap; }
+.links a { display: inline-flex; align-items: center; gap: 6px; color: var(--ink2); text-decoration: none; white-space: nowrap; }
+.links .gh { width: 16px; height: 16px; fill: currentColor; flex: none; }
 .links a:hover, .links a:focus-visible { color: var(--ink); text-decoration: underline; }
 
 .filters { padding: 0 20px 10px; display: flex; flex-direction: column; gap: 8px; }
