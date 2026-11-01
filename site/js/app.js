@@ -133,11 +133,27 @@ addEventListener("themechange", () => { if (route.view === "overview" && overvie
 
 // --------------------------------------------------------------------- boot
 
+function showProgress(p) {
+  const bar = $("#boot progress"), status = $("#boot .boot-status");
+  if (p.stage === "download") {
+    bar.max = p.total; bar.value = p.loaded;
+    // A percentage, not megabytes: the stream counts decompressed bytes (~35 MB), the wire carries ~7 MB.
+    status.textContent = `${p.where === "local" ? "Reading the local copy in site/data/" : "Downloading from GitHub"}… ${Math.floor((100 * p.loaded) / p.total)}%`;
+  } else if (p.stage === "parse") {
+    bar.removeAttribute("value");                          // indeterminate while parsing
+    status.textContent = "Reading the responses…";
+  }
+}
+
 async function main() {
   try {
-    await loadIndex();
+    // ?data=local or ?data=upstream overrides where the dataset comes from.
+    await loadIndex({ progress: showProgress, prefer: new URLSearchParams(location.search).get("data") || undefined });
   } catch (err) {
-    $("#boot").replaceChildren(h("p", {}, "Could not load the corpus index."), h("p", { class: "dim" }, String(err.message || err)));
+    $("#boot").replaceChildren(
+      h("p", { class: "boot-title" }, "Could not load the RAGTruth dataset."),
+      h("p", { class: "boot-status" }, String(err.message || err)),
+      h("p", { class: "boot-note" }, "It is downloaded from the RAGTruth repository on GitHub, so check your connection and reload."));
     return;
   }
   lastImplicit = F.implicit;

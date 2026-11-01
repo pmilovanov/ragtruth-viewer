@@ -1,2 +1,3 @@
-__pycache__/
-/data/
+# The dataset, if downloaded locally with `just fetch-data`; the site fetches it from GitHub otherwise.
+/site/data/
+node_modules/

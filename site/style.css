@@ -95,7 +95,12 @@ select.ctl { padding: 4px 8px; border: 1px solid var(--axis); background: var(--
 .view { flex: 1; min-height: 0; }
 .view[hidden] { display: none; }
 .overview { overflow: auto; padding: 16px 20px 40px; }
-.boot { padding: 40px; color: var(--ink2); }
+.boot { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; padding: 40px; text-align: center; color: var(--ink2); }
+.boot-title { font-size: 16px; font-weight: 600; color: var(--ink); }
+.boot progress { width: min(360px, 80vw); height: 8px; accent-color: var(--t0); }
+.boot-status { font-variant-numeric: tabular-nums; }
+.boot-note { max-width: 46ch; font-size: 12.5px; color: var(--muted); }
+.boot-note a { color: inherit; }
 
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 16px; }
 .tile { background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 14px 16px; }

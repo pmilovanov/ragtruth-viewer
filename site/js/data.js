@@ -16,14 +16,47 @@ const listeners = new Set();
 export const onChange = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
 export const emit = () => listeners.forEach((fn) => fn());
 
-async function getJSON(url) {
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`${url}: ${resp.status}`);
-  return resp.json();
+// ------------------------------------------------------------ the worker
+// The dataset is downloaded, parsed and searched in a Web Worker
+// (corpus.worker.js); this side only ever holds the compact index.
+
+let worker = null, nextCall = 0, onProgress = () => {};
+const pending = new Map();
+
+function startWorker() {
+  worker = new Worker(new URL("./corpus.worker.js", import.meta.url), { type: "module" });
+  worker.onmessage = ({ data }) => {
+    if (data.progress) return onProgress(data.progress);
+    const call = pending.get(data.id);
+    if (!call) return;
+    pending.delete(data.id);
+    if (data.error) call.reject(new Error(data.error)); else call.resolve(data.result);
+  };
+  worker.onerror = (e) => {
+    e.preventDefault();
+    const err = new Error(e.message || "the data worker failed to start");
+    pending.forEach((call) => call.reject(err));
+    pending.clear();
+  };
 }
 
-export async function loadIndex() {
-  const ix = await getJSON("/api/index");
+function ask(op, args) {
+  return new Promise((resolve, reject) => {
+    const id = ++nextCall;
+    pending.set(id, { resolve, reject });
+    worker.postMessage({ id, op, args });
+  });
+}
+
+/**
+ * Download the dataset (in the worker) and take the columnar index.
+ * progress(p) is called with {stage: "download", where, loaded, total} and {stage: "parse"}.
+ * prefer: "local" | "upstream" to override where the data comes from.
+ */
+export async function loadIndex({ progress, prefer } = {}) {
+  if (progress) onProgress = progress;
+  if (!worker) startWorker();
+  const ix = await ask("load", { prefer });
   const { facets: f, cols: c, spans: s } = ix;
   Object.assign(D, {
     n: ix.n, f, sourceIds: ix.source_ids,
@@ -130,7 +163,7 @@ export function resetFilters() {
 }
 
 let searchSeq = 0;
-/** Apply a text query on the server; filters update once the answer is in. */
+/** Apply a text query (run in the worker); filters update once the answer is in. */
 export async function applyQuery(q, scope) {
   const mine = ++searchSeq;
   q = q.trim();
@@ -138,7 +171,7 @@ export async function applyQuery(q, scope) {
     F.q = ""; F.scope = scope; D.searchMask = null;
     return emit();
   }
-  const { rows } = await getJSON(`/api/search?q=${encodeURIComponent(q)}&scope=${encodeURIComponent(scope)}`);
+  const rows = await ask("search", { q, scope });
   if (mine !== searchSeq) return;                       // a newer keystroke overtook this one
   const mask = new Uint8Array(D.n);
   for (const r of rows) mask[r] = 1;
@@ -181,7 +214,7 @@ export function paramsToFilters(p) {
   return { q: p.get("q") || "", scope: p.get("in") || "response" };
 }
 
-// ------------------------------------------------------------ record fetches
+// ------------------------------------------------------------ records
 
 const cache = new Map();
 function cached(key, load) {
@@ -191,8 +224,8 @@ function cached(key, load) {
   if (cache.size > 400) cache.delete(cache.keys().next().value);
   return p;
 }
-export const getResponse = (id) => cached(`r/${id}`, () => getJSON(`/api/response/${encodeURIComponent(id)}`));
-export const getSource = (sid) => cached(`s/${sid}`, () => getJSON(`/api/source/${encodeURIComponent(sid)}`));
+export const getResponse = (id) => cached(`r/${id}`, () => ask("response", { id }));
+export const getSource = (sid) => cached(`s/${sid}`, () => ask("source", { sid }));
 
 /** Row facts for a list entry, no network needed. */
 export function rowInfo(i) {

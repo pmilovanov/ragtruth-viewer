@@ -2,7 +2,7 @@
   "name": "ragtruth-viewer",
   "private": true,
   "type": "module",
-  "description": "No dependencies. package.json exists so `node --test` treats static/js as ES modules.",
+  "description": "No dependencies and no build step. This file exists so `node --test` treats site/js as ES modules.",
   "scripts": {
     "test": "node --test"
   }

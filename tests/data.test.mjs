@@ -1,7 +1,7 @@
 // The selection logic and URL state, with a hand-built index (no server, no DOM).
 import test from "node:test";
 import assert from "node:assert/strict";
-import { D, F, derive, select, resetFilters, filtersToParams, paramsToFilters, applyQuery } from "../static/js/data.js";
+import { D, F, derive, select, resetFilters, filtersToParams, paramsToFilters, applyQuery } from "../site/js/data.js";
 
 // Row 0: two overlapping spans (0-5 type 0, 3-8 type 1)   -> 8 chars covered
 // Row 1: one implicit-true span (2-4 type 0)
@@ -97,6 +97,6 @@ test("a URL naming things that do not exist is ignored, not fatal", () => {
 test("an empty query clears the search without a request", async () => {
   load();
   F.q = "x"; D.searchMask = Uint8Array.of(1, 1, 1);
-  await applyQuery("   ", "response");                   // would throw if it reached fetch()
+  await applyQuery("   ", "response");                   // would throw if it reached the worker
   assert.equal(F.q, ""); assert.equal(D.searchMask, null);
 });

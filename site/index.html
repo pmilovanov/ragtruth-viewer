@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RAGTruth viewer</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="chrome">
@@ -22,10 +22,15 @@
     <div id="filters" class="filters"></div>
   </div>
 
-  <main id="overview" class="view overview"></main>
+  <main id="overview" class="view overview" hidden></main>
   <main id="browse" class="view browse" hidden></main>
-  <div id="boot" class="boot">Loading the corpus…</div>
+  <div id="boot" class="boot" role="status" aria-live="polite">
+    <p class="boot-title">Loading the RAGTruth dataset</p>
+    <progress max="1" value="0"></progress>
+    <p class="boot-status">Starting…</p>
+    <p class="boot-note">About 7 MB, downloaded from the <a href="https://github.com/ParticleMedia/RAGTruth">RAGTruth repository</a> on GitHub and processed entirely in your browser.</p>
+  </div>
 
-  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
