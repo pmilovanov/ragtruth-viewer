@@ -1,6 +1,7 @@
 {
   "name": "ragtruth-viewer",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "No dependencies and no build step. This file exists so `node --test` treats site/js as ES modules.",
   "scripts": {

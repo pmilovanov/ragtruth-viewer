@@ -1,4 +1,4 @@
-# RAGTruth viewer
+# RAGTruth Viewer
 
 **Read, search and chart the [RAGTruth](https://github.com/ParticleMedia/RAGTruth) hallucination dataset in your browser.** See every response with its hallucinated spans highlighted next to the source it was generated from, and see the patterns across all 17,790 responses.
 
@@ -183,6 +183,10 @@ just run           # serve site/ locally
 **Deployment.** `.github/workflows/pages.yml` runs the tests on every pull request, against the real dataset downloaded from the pinned commit, and publishes `site/` to GitHub Pages on every push to `main`. To move to a newer RAGTruth release, change `UPSTREAM_COMMIT` and `SIZES` in `site/js/config.js`; the tests tell you if anything no longer adds up.
 
 Tested in Chromium; other browsers are untried. The viewer was first built in [`pmilovanov/guardrails`](https://github.com/pmilovanov/guardrails), then ported from a small Python server to a static site.
+
+## License
+
+The viewer's code is released under the [MIT License](LICENSE). The RAGTruth dataset is not part of this repository and keeps its own terms (see [Credits and citation](#credits-and-citation)).
 
 ## Credits and citation
 

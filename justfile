@@ -1,4 +1,4 @@
-# RAGTruth viewer: a static site, no build step. Run `just` to list the recipes.
+# RAGTruth Viewer: a static site, no build step. Run `just` to list the recipes.
 
 port := env("PORT", "8765")
 

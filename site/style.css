@@ -1,4 +1,4 @@
-/* RAGTruth viewer. Colour tokens are the dataviz reference palette (docs: README).
+/* RAGTruth Viewer. Colour tokens are the dataviz reference palette (docs: README).
    Categorical slots 1-4 are the four label types, in fixed order, never recycled:
      --t0 Evident Baseless Info   --t1 Evident Conflict
      --t2 Subtle Baseless Info    --t3 Subtle Conflict                              */
@@ -53,14 +53,18 @@ kbd { font: 11px ui-monospace, monospace; padding: 1px 5px; border: 1px solid va
 
 /* ---------------------------------------------------------------- chrome */
 .chrome { background: var(--surface); border-bottom: 1px solid var(--ring); flex: none; z-index: 20; }
-.top { display: flex; align-items: center; gap: 24px; padding: 10px 20px; }
-.brand { display: flex; align-items: baseline; gap: 12px; }
-.brand h1 { font-size: 18px; font-weight: 650; letter-spacing: -0.01em; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; padding: 10px 20px; }
+.brand { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+.brand h1 { font-size: 18px; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; }
 .tagline { color: var(--muted); font-size: 12.5px; }
 .tabs { display: flex; gap: 4px; margin-right: auto; }
 .tabbtn { border: 0; background: transparent; padding: 6px 14px; border-radius: 8px; cursor: pointer; color: var(--ink2); }
 .tabbtn:hover { background: var(--hover); }
 .tabbtn[aria-selected="true"] { background: var(--ink); color: var(--surface); }
+.links { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; }
+.links a { display: inline-flex; align-items: center; gap: 6px; color: var(--ink2); text-decoration: none; white-space: nowrap; }
+.links .gh { width: 16px; height: 16px; fill: currentColor; flex: none; }
+.links a:hover, .links a:focus-visible { color: var(--ink); text-decoration: underline; }
 
 .filters { padding: 0 20px 10px; display: flex; flex-direction: column; gap: 8px; }
 .frow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
