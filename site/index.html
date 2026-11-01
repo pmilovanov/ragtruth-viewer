@@ -3,19 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RAGTruth viewer</title>
+  <title>RAGTruth Viewer</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="chrome">
     <header class="top">
       <div class="brand">
-        <h1>RAGTruth</h1>
+        <h1>RAGTruth Viewer</h1>
         <span id="tagline" class="tagline"></span>
       </div>
       <nav class="tabs" role="tablist" aria-label="View">
         <button class="tabbtn" role="tab" data-view="overview" aria-selected="true" title="Aggregate patterns (1)">Overview</button>
         <button class="tabbtn" role="tab" data-view="browse" aria-selected="false" title="Individual responses (2)">Browse</button>
+      </nav>
+      <nav class="links" aria-label="On GitHub">
+        <a href="https://github.com/ParticleMedia/RAGTruth" target="_blank" rel="noopener" title="The RAGTruth dataset and paper">Dataset on GitHub<span aria-hidden="true"> ↗</span></a>
+        <a href="https://github.com/pmilovanov/ragtruth-viewer" target="_blank" rel="noopener" title="This viewer's source code">Viewer on GitHub<span aria-hidden="true"> ↗</span></a>
       </nav>
       <button id="theme" class="btn small" type="button" title="Toggle light/dark (t)">Theme</button>
     </header>
